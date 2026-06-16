@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mapa Estratégico RIS</title>
+<style>
+  :root {
+    --bg:       #eef1f7;
+    --surface:  #ffffff;
+    --surface2: #f5f7fc;
+    --border:   #dde3f0;
+    --shadow:   0 2px 14px rgba(40,60,130,.09);
+    --text:     #1a2040;
+    --muted:    #64748b;
+    --fin:      #16a34a;
+    --fin-lt:   #dcfce7;
+    --fin-bg:   #f0fdf4;
+    --cli:      #2563eb;
+    --cli-lt:   #dbeafe;
+    --cli-bg:   #eff6ff;
+    --proc:     #d97706;
+    --proc-lt:  #fef3c7;
+    --proc-bg:  #fffbeb;
+    --apr:      #7c3aed;
+    --apr-lt:   #ede9fe;
+    --apr-bg:   #faf5ff;
+    --red:      #dc2626;
+    --red-lt:   #fee2e2;
+    --yellow:   #d97706;
+    --yellow-lt:#fef9c3;
+    --green:    #16a34a;
+    --green-lt: #dcfce7;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    padding: 18px 22px;
+  }
+
+  /* ── HEADER ─────────────────────────────────────── */
+  .header {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 22px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .logo-wrap {
+    width: 52px; height: 52px; border-radius: 10px;
+    overflow: hidden; flex-shrink: 0;
+    border: 2px solid #c9a84c;
+    box-shadow: 0 2px 8px rgba(201,168,76,.22);
+  }
+  .logo-wrap img { width: 100%; height: 100%; object-fit: cover; }
+  .header-titles h1 { font-size: 1.18rem; font-weight: 800; color: var(--text); }
+  .header-titles p  { font-size: 0.73rem; color: var(--muted); margin-top: 1px; }
+  .header-right { display: flex; gap: 8px; align-items: center; }
+  .pill {
+    padding: 5px 13px; border-radius: 20px;
+    font-size: 0.73rem; font-weight: 600;
+  }
+  .pill-dark   { background: var(--text); color: #fff; }
+  .pill-light  { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+
+  /* ── SCORE CARDS ─────────────────────────────────── */
+  .score-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .score-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    padding: 16px 18px 14px;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+  }
+  .score-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0; height: 3px;
+    border-radius: 0 0 13px 13px;
+  }
+  .score-card.fin::after  { background: linear-gradient(90deg,#16a34a,#4ade80); }
+  .score-card.cli::after  { background: linear-gradient(90deg,#2563eb,#60a5fa); }
+  .score-card.proc::after { background: linear-gradient(90deg,#d97706,#fbbf24); }
+  .score-card.apr::after  { background: linear-gradient(90deg,#7c3aed,#a78bfa); }
+
+  .sc-label {
+    font-size: 0.62rem; text-transform: uppercase;
+    letter-spacing: .12em; font-weight: 700;
+    color: var(--muted); margin-bottom: 8px;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .sc-val {
+    font-size: 2.2rem; font-weight: 900; line-height: 1;
+  }
+  .sc-pct { font-size: 1.1rem; font-weight: 400; color: var(--muted); }
+  .sc-delta {
+    margin-top: 8px; font-size: 0.7rem; font-weight: 600;
+  }
+  .delta-up   { color: var(--fin); }
+  .delta-down { color: var(--red); }
+  .delta-flat { color: var(--proc); }
+
+  /* ── MAIN LAYOUT ─────────────────────────────────── */
+  .main-layout {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 16px;
+  }
+
+  /* ── MAP CARD ────────────────────────────────────── */
+  .map-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    padding: 18px;
+    box-shadow: var(--shadow);
+  }
+  .card-title {
+    font-size: 0.65rem; text-transform: uppercase;
+    letter-spacing: .14em; font-weight: 700;
+    color: var(--muted); margin-bottom: 14px;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .card-title::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  /* Perspective rows */
+  .persp-row {
+    display: flex; gap: 0;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .persp-row:last-child { margin-bottom: 0; }
+
+  .persp-label {
+    width: 34px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    font-size: 0.6rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: .14em;
+    color: #fff;
+    padding: 10px 0;
+  }
+  .persp-label.fin  { background: var(--fin); }
+  .persp-label.cli  { background: var(--cli); }
+  .persp-label.proc { background: var(--proc); }
+  .persp-label.apr  { background: var(--apr); }
+
+  .persp-body {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    background: var(--surface2);
+  }
+
+  .obj-card {
+    padding: 9px 12px;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 5px;
+  }
+  .obj-card:nth-child(even)  { border-right: none; }
+  .obj-card:nth-last-child(-n+2) { border-bottom: none; }
+
+  .obj-top {
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .obj-name {
+    font-size: 0.73rem; font-weight: 700; color: var(--text);
+  }
+  .obj-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  }
+  .obj-meta {
+    font-size: 0.64rem; color: var(--muted);
+  }
+  .obj-bar-bg {
+    height: 5px; background: #e5eaf4; border-radius: 3px;
+  }
+  .obj-bar-fill { height: 100%; border-radius: 3px; transition: width .4s; }
+
+  /* ── RIGHT COLUMN ────────────────────────────────── */
+  .right-col {
+    display: flex; flex-direction: column; gap: 14px;
+  }
+
+  /* Donut chart card */
+  .donut-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    padding: 18px;
+    box-shadow: var(--shadow);
+  }
+  .donut-wrap {
+    display: flex; justify-content: center;
+    margin: 10px 0;
+  }
+  .donut-legend {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+    margin-top: 10px;
+  }
+  .legend-item {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.68rem;
+  }
+  .legend-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  }
+  .legend-name { color: var(--muted); }
+  .legend-val  { font-weight: 700; color: var(--text); margin-left: auto; }
+
+  /* Alerts card */
+  .alerts-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    padding: 18px;
+    box-shadow: var(--shadow);
+    flex: 1;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .alert-item {
+    padding: 9px 11px; border-radius: 9px;
+    border-left: 3px solid;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .alert-item.crit   { background: var(--red-lt);    border-color: var(--red); }
+  .alert-item.warn   { background: var(--yellow-lt); border-color: var(--proc); }
+  .alert-item.ok     { background: var(--green-lt);  border-color: var(--fin); }
+  .alert-badge {
+    font-size: 0.6rem; font-weight: 800; text-transform: uppercase;
+    letter-spacing: .1em; margin-bottom: 1px;
+  }
+  .crit .alert-badge { color: var(--red); }
+  .warn .alert-badge { color: var(--proc); }
+  .ok   .alert-badge { color: var(--fin); }
+  .alert-text {
+    font-size: 0.69rem; color: var(--text); line-height: 1.4;
+  }
+
+  /* ── BOTTOM GRID ──────────────────────────────── */
+  .bottom-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+    margin-top: 16px;
+  }
+  .trend-card, .dist-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    padding: 18px;
+    box-shadow: var(--shadow);
+  }
+  .dist-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .dist-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.72rem;
+  }
+  .dist-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%; flex-shrink: 0;
+  }
+  .dist-label { color: var(--muted); flex: 1; }
+  .dist-val   { font-weight: 700; color: var(--text); }
+
+  /* ── KPI TABLE ────────────────────────────────── */
+  .table-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    padding: 20px;
+    margin-top: 16px;
+    box-shadow: var(--shadow);
+    overflow-x: auto;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+  thead tr { border-bottom: 2px solid var(--border); }
+  thead th {
+    text-align: left; padding: 6px 10px;
+    font-size: 0.68rem; text-transform: uppercase;
+    letter-spacing: .08em; color: var(--muted); font-weight: 700;
+  }
+  tbody tr { border-bottom: 1px solid var(--border); }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface2); }
+  td { padding: 10px 10px; vertical-align: middle; }
+  .persp-tag {
+    font-size: 0.68rem; font-weight: 700; padding: 3px 8px;
+    border-radius: 6px;
+  }
+  .tag-fin  { background: var(--fin-lt);  color: var(--fin); }
+  .tag-cli  { background: var(--cli-lt);  color: var(--cli); }
+  .tag-proc { background: var(--proc-lt); color: var(--proc); }
+  .tag-apr  { background: var(--apr-lt);  color: var(--apr); }
+  .inline-bar { width: 90px; height: 7px; background: #e8ecf5; border-radius: 4px; }
+  .inline-fill { height: 100%; border-radius: 4px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-size: 0.68rem; font-weight: 700;
+    padding: 3px 8px; border-radius: 8px;
+    white-space: nowrap;
+  }
+  .chip.green  { background: var(--green-lt);  color: var(--green); }
+  .chip.yellow { background: var(--yellow-lt); color: var(--yellow); }
+  .chip.red    { background: var(--red-lt);    color: var(--red); }
+  .trend-arrow { font-size: 0.8rem; font-weight: 700; }
+  .ta-up   { color: var(--green); }
+  .ta-flat { color: var(--yellow); }
+  .ta-down { color: var(--red); }
+
+  /* Footer */
+  .footer {
+    text-align: center; padding: 14px;
+    font-size: 0.64rem; color: var(--muted); letter-spacing: .04em;
+    margin-top: 4px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ─────────────────────────────────────────── -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo-wrap"><img src="ris-logo.jpg" alt="RIS"></div>
+    <div class="header-titles">
+      <h1>Mapa Estratégico RIS</h1>
+      <p>Rio International School · Balanced Scorecard · Atualizado em tempo real</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="pill pill-light">📅 Q2 2026</span>
+    <span class="pill pill-dark">Score Global &nbsp;<strong>67%</strong></span>
+  </div>
+</div>
+
+<!-- ── SCORE CARDS ─────────────────────────────────────── -->
+<div class="score-row">
+  <div class="score-card fin">
+    <div class="sc-label">💰 Financeiro</div>
+    <div class="sc-val" style="color:var(--fin)">78<span class="sc-pct">%</span></div>
+    <div class="sc-delta delta-up">▲ +4pp vs meta</div>
+  </div>
+  <div class="score-card cli">
+    <div class="sc-label">🤝 Clientes</div>
+    <div class="sc-val" style="color:var(--cli)">65<span class="sc-pct">%</span></div>
+    <div class="sc-delta delta-flat">→ No ritmo</div>
+  </div>
+  <div class="score-card proc">
+    <div class="sc-label">⚙️ Processos</div>
+    <div class="sc-val" style="color:var(--red)">54<span class="sc-pct">%</span></div>
+    <div class="sc-delta delta-down">▼ −6pp abaixo</div>
+  </div>
+  <div class="score-card apr">
+    <div class="sc-label">🧠 Aprendizado</div>
+    <div class="sc-val" style="color:var(--apr)">72<span class="sc-pct">%</span></div>
+    <div class="sc-delta delta-up">▲ +3pp vs meta</div>
+  </div>
+</div>
+
+<!-- ── MAIN LAYOUT ─────────────────────────────────────── -->
+<div class="main-layout">
+
+  <!-- MAPA ESTRATÉGICO -->
+  <div class="map-card">
+    <div class="card-title">🗺️ Mapa Estratégico</div>
+
+    <!-- FINANCEIRO -->
+    <div class="persp-row">
+      <div class="persp-label fin">Financeiro</div>
+      <div class="persp-body">
+        <div class="obj-card">
+          <div class="obj-top">
+            <span class="obj-name">Crescer Receita</span>
+            <span class="obj-dot" style="background:var(--fin)"></span>
+          </div>
+          <div class="obj-meta">Meta: +20% AoA &nbsp;|&nbsp; Real: +24%</div>
+          <div class="obj-bar-bg"><div class="obj-bar-fill" style="width:90%;background:var(--fin)"></div></div>
+        </div>
+        <div class="obj-card">
+          <div class="obj-top">
+            <span class="obj-name">Reduzir Custos Op.</span>
+            <span class="obj-dot" style="background:var(--fin)"></span>
+          </div>
+          <div class="obj-meta">Meta: −15% &nbsp;|&nbsp; Real: −18%</div>
+          <div class="obj-bar-bg"><div class="obj-bar-fill" style="width:85%;background:var(--fin)"></div></div>
+        </div>
+        <div class="obj-card">
+          <div class="obj-top">
+            <span class="obj-name">Melhorar Margem</span>
+            <span class="obj-dot" style="background:var(--proc)"></span>
+          </div>
+          <div class="obj-meta">Meta: 30% &nbsp;|&nbsp; Real: 27%</div>
+          <div class="obj-bar-bg"><div class="obj-bar-fill" style="width:65%;background:var(--proc)"></div></div>
+        </div>
+        <div class="obj-card">
+          <div class="obj-top">
+            <span class="obj-name">ROI de Projetos</span>
+            <span class="obj-dot" style="background:var(--fin)"></span>
+          </div>
+          <div class="obj-meta">Meta: 2.5x &nbsp;|&nbsp; Real: 2.8x</div>
+          <div class="obj-bar-bg"><div class="obj-bar-fill" style="width:82%;background:var(--fin)"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CLIENTES -->
+    <div class="persp-row">
+      <div class="persp-label cli">Clientes</div>
+      <div class="persp-body">
+        <div class="obj-card">
+          <div class="obj-top">
+            <span class="obj-name">NPS (Satisfação)</span>
+            <span class="obj-dot" style="background:var(--fin)"></span>
+          </div>
+          <div class="obj-meta">Meta: 70 &nbsp;|&nbsp; Real: 74</div>
+          <div class="obj-bar-bg"><div class="obj-bar-fill" style="width:74%;background:var(--cli)"></div></div>
+        </div>
+        <div class="obj-card">
+          <div class="obj-top">
+            <span class="obj-name">Novos Mercados</span>
+            <span class="obj-dot" style="background:var(--proc)"></span>
+          </div>
+          <div class="obj-meta">Meta: 3 &nbsp;|&nbsp; Real: 2</div>
+          <div class="obj-bar-bg"><div class="obj-bar-fill" style="width:55%;background:var(--proc)"></div></div>
+        </div>
+        <div class="obj-card">
+          <div class="obj-top">
+            <span class="obj-name">Retenção de Clientes</span>
+            <span class="obj-dot" style="background:var(--proc)"></span>
+          </div>
+          <div class="obj-meta">Meta: 90% &nbsp;|&nbsp; Real: 86%</div>
+          <div class="obj-bar-bg"><div class="obj-bar-fill" style="width:66%;background:var(--proc)"></div></div>
+        </div>
+        <div class="obj-card">
+          <div class="obj-top">
+            <span class="obj-name">Ticket Médio</span>
+            <span class="obj-dot" style="background:var(--fin)"></span>
+          </div>
+          <div class="obj-meta">Meta: R$4k &nbsp;|&nbsp; Real: R$4.3k</div>
+          <div class="obj-bar-bg"><div class="obj-bar-fill" style="width:80%;background:var(--cli)"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROCESSOS -->
+    <div class="persp-row">
+      <div class="persp-label proc">Processos</div>
+      <div class="persp-body">
+        <div class="obj-card">
+          <div class="obj-top">
+            <span class="obj-name">Eficiência Operacional</span>
+            <span class="obj-dot" style="background:var(--red)"></span>
+          </div>
+          <div class="obj-meta">Meta: 85% &nbsp;|&nbsp; Real: 71%</div>
+          <div class="obj-bar-bg"><div class="obj-bar-fill" style="width:47%;background:var(--red)"></div></div>
+        </div>
+        <div class="obj-card">
+          <div class="obj-top">
+            <span class="obj-name">Qualidade (Defeitos)</span>
+            <span class="obj-dot" style="background:var(--red)"></span>
+          </div>
+          <div class="obj-meta">Meta: &lt;2% &nbsp;|&nbsp; Real: 3.1%</div>
+          <div class="obj-bar-bg"><div class="obj-bar-fill" style="width:40%;background:var(--red)"></div></div>
+        </div>
+        <div class="obj-card">
+          <div class="obj-top">
+            <span class="obj-name">Tempo de Entrega</span>
+            <span class="obj-dot" style="background:var(--proc)"></span>
+          </div>
+          <div class="obj-meta">Meta: 5d &nbsp;|&nbsp; Real: 6.2d</div>
+          <div class="obj-bar-bg"><div class="obj-bar-fill" style="width:58%;background:var(--proc)"></div></div>
+        </div>
+        <div class="obj-card">
+          <div class="obj-top">
+            <span class="obj-name">Automação de Processos</span>
+            <span class="obj-dot" style="background:var(--proc)"></span>
+          </div>
+          <div class="obj-meta">Meta: 40% &nbsp;|&nbsp; Real: 30%</div>
+          <div class="obj-bar-bg"><div class="obj-bar-fill" style="width:55%;background:var(--proc)"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- APRENDIZADO -->
+    <div class="persp-row">
+      <div class="persp-label apr">Aprendizado</div>
+      <div class="persp-body">
+        <div class="obj-card">
+          <div class="obj-top">
+            <span class="obj-name">Engajamento Time</span>
+            <span class="obj-dot" style="background:var(--fin)"></span>
+          </div>
+          <div class="obj-meta">Meta: 80% &nbsp;|&nbsp; Real: 83%</div>
+          <div class="obj-bar-bg"><div class="obj-bar-fill" style="width:83%;background:var(--apr)"></div></div>
+        </div>
+        <div class="obj-card">
+          <div class="obj-top">
+            <span class="obj-name">Inovação (Projetos)</span>
+            <span class="obj-dot" style="background:var(--proc)"></span>
+          </div>
+          <div class="obj-meta">Meta: 5 &nbsp;|&nbsp; Real: 3</div>
+          <div class="obj-bar-bg"><div class="obj-bar-fill" style="width:50%;background:var(--proc)"></div></div>
+        </div>
+        <div class="obj-card">
+          <div class="obj-top">
+            <span class="obj-name">Horas de Treinamento</span>
+            <span class="obj-dot" style="background:var(--proc)"></span>
+          </div>
+          <div class="obj-meta">Meta: 40h &nbsp;|&nbsp; Real: 38h</div>
+          <div class="obj-bar-bg"><div class="obj-bar-fill" style="width:76%;background:var(--proc)"></div></div>
+        </div>
+        <div class="obj-card">
+          <div class="obj-top">
+            <span class="obj-name">Turnover</span>
+            <span class="obj-dot" style="background:var(--fin)"></span>
+          </div>
+          <div class="obj-meta">Meta: &lt;10% &nbsp;|&nbsp; Real: 7%</div>
+          <div class="obj-bar-bg"><div class="obj-bar-fill" style="width:82%;background:var(--apr)"></div></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /map-card -->
+
+  <!-- RIGHT COLUMN -->
+  <div class="right-col">
+
+    <!-- Donut Chart -->
+    <div class="donut-card">
+      <div class="card-title">📊 Score Geral por Perspectiva</div>
+      <div class="donut-wrap">
+        <!-- 4-ring SVG donut -->
+        <svg width="160" height="160" viewBox="0 0 160 160">
+          <!-- Background rings -->
+          <circle cx="80" cy="80" r="68" fill="none" stroke="#e8ecf5" stroke-width="10"/>
+          <circle cx="80" cy="80" r="54" fill="none" stroke="#e8ecf5" stroke-width="10"/>
+          <circle cx="80" cy="80" r="40" fill="none" stroke="#e8ecf5" stroke-width="10"/>
+          <circle cx="80" cy="80" r="26" fill="none" stroke="#e8ecf5" stroke-width="10"/>
+
+          <!-- Financeiro 78% — outer ring r=68, circumference=427.26 -->
+          <!-- dashoffset = 427.26 * (1 - 0.78) = 93.99 -->
+          <circle cx="80" cy="80" r="68" fill="none" stroke="#16a34a" stroke-width="10"
+            stroke-dasharray="427.26" stroke-dashoffset="93.99"
+            stroke-linecap="round"
+            transform="rotate(-90 80 80)"/>
+
+          <!-- Clientes 65% — r=54, circumference=339.29 -->
+          <!-- dashoffset = 339.29 * (1 - 0.65) = 118.75 -->
+          <circle cx="80" cy="80" r="54" fill="none" stroke="#2563eb" stroke-width="10"
+            stroke-dasharray="339.29" stroke-dashoffset="118.75"
+            stroke-linecap="round"
+            transform="rotate(-90 80 80)"/>
+
+          <!-- Processos 54% — r=40, circumference=251.33 -->
+          <!-- dashoffset = 251.33 * (1 - 0.54) = 115.61 -->
+          <circle cx="80" cy="80" r="40" fill="none" stroke="#d97706" stroke-width="10"
+            stroke-dasharray="251.33" stroke-dashoffset="115.61"
+            stroke-linecap="round"
+            transform="rotate(-90 80 80)"/>
+
+          <!-- Aprendizado 72% — r=26, circumference=163.36 -->
+          <!-- dashoffset = 163.36 * (1 - 0.72) = 45.74 -->
+          <circle cx="80" cy="80" r="26" fill="none" stroke="#7c3aed" stroke-width="10"
+            stroke-dasharray="163.36" stroke-dashoffset="45.74"
+            stroke-linecap="round"
+            transform="rotate(-90 80 80)"/>
+
+          <!-- Center text -->
+          <text x="80" y="76" text-anchor="middle" fill="#1a2040"
+            font-size="18" font-weight="900" font-family="Segoe UI,system-ui,sans-serif">67%</text>
+          <text x="80" y="90" text-anchor="middle" fill="#64748b"
+            font-size="8" font-family="Segoe UI,system-ui,sans-serif">Score Global</text>
+        </svg>
+      </div>
+      <div class="donut-legend">
+        <div class="legend-item">
+          <span class="legend-dot" style="background:var(--fin)"></span>
+          <span class="legend-name">Financeiro</span>
+          <span class="legend-val">78%</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot" style="background:var(--cli)"></span>
+          <span class="legend-name">Clientes</span>
+          <span class="legend-val">65%</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot" style="background:var(--proc)"></span>
+          <span class="legend-name">Processos</span>
+          <span class="legend-val">54%</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot" style="background:var(--apr)"></span>
+          <span class="legend-name">Aprendizado</span>
+          <span class="legend-val">72%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alertas -->
+    <div class="alerts-card">
+      <div class="card-title">⚡ Alertas de Decisão</div>
+
+      <div class="alert-item crit">
+        <div class="alert-badge">🔴 Crítico</div>
+        <div class="alert-text">Eficiência Operacional 16pp abaixo da meta. Ação imediata.</div>
+      </div>
+
+      <div class="alert-item warn">
+        <div class="alert-badge">🟡 Atenção</div>
+        <div class="alert-text">Qualidade de entregas acima de 3%. Revisar processos Q3.</div>
+      </div>
+
+      <div class="alert-item warn">
+        <div class="alert-badge">🟡 Atenção</div>
+        <div class="alert-text">Expansão de novos mercados 1 mercado abaixo do plano.</div>
+      </div>
+
+      <div class="alert-item warn">
+        <div class="alert-badge">🟡 Atenção</div>
+        <div class="alert-text">Margem abaixo da meta em 3pp. Revisar estrutura de custos.</div>
+      </div>
+
+      <div class="alert-item ok">
+        <div class="alert-badge">🟢 Ok</div>
+        <div class="alert-text">Engajamento e Turnover dentro das metas — melhor período.</div>
+      </div>
+
+    </div>
+
+  </div><!-- /right-col -->
+</div><!-- /main-layout -->
+
+<!-- ── KPI TABLE ─────────────────────────────────────────────── -->
+<div class="table-card">
+  <div class="card-title">📋 Painel de KPIs — Detalhado</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Perspectiva</th>
+        <th>Indicador</th>
+        <th>Meta</th>
+        <th>Realizado</th>
+        <th>Progresso</th>
+        <th>Status</th>
+        <th>Tendência</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="persp-tag tag-fin">Financeiro</span></td>
+        <td>Receita Líquida</td>
+        <td>R$3M</td>
+        <td><strong>R$2.4M</strong></td>
+        <td><div class="inline-bar"><div class="inline-fill" style="width:80%;background:var(--fin)"></div></div></td>
+        <td><span class="chip green">✓ No target</span></td>
+        <td class="trend-arrow ta-up">▲ Subindo</td>
+      </tr>
+      <tr>
+        <td><span class="persp-tag tag-fin">Financeiro</span></td>
+        <td>Margem EBITDA</td>
+        <td>30%</td>
+        <td><strong>28%</strong></td>
+        <td><div class="inline-bar"><div class="inline-fill" style="width:70%;background:var(--yellow)"></div></div></td>
+        <td><span class="chip yellow">⚠ Atenção</span></td>
+        <td class="trend-arrow ta-flat">→ Estável</td>
+      </tr>
+      <tr>
+        <td><span class="persp-tag tag-cli">Clientes</span></td>
+        <td>NPS</td>
+        <td>70 pts</td>
+        <td><strong>74 pts</strong></td>
+        <td><div class="inline-bar"><div class="inline-fill" style="width:74%;background:var(--cli)"></div></div></td>
+        <td><span class="chip green">✓ Superou</span></td>
+        <td class="trend-arrow ta-up">▲ Subindo</td>
+      </tr>
+      <tr>
+        <td><span class="persp-tag tag-cli">Clientes</span></td>
+        <td>Retenção</td>
+        <td>90%</td>
+        <td><strong>86%</strong></td>
+        <td><div class="inline-bar"><div class="inline-fill" style="width:66%;background:var(--yellow)"></div></div></td>
+        <td><span class="chip yellow">⚠ Abaixo</span></td>
+        <td class="trend-arrow ta-flat">→ Estável</td>
+      </tr>
+      <tr>
+        <td><span class="persp-tag tag-cli">Clientes</span></td>
+        <td>Novos Clientes</td>
+        <td>50/mês</td>
+        <td><strong>61/mês</strong></td>
+        <td><div class="inline-bar"><div class="inline-fill" style="width:90%;background:var(--fin)"></div></div></td>
+        <td><span class="chip green">✓ Superou</span></td>
+        <td class="trend-arrow ta-up">▲ Subindo</td>
+      </tr>
+      <tr>
+        <td><span class="persp-tag tag-proc">Processos</span></td>
+        <td>Eficiência Operacional</td>
+        <td>85%</td>
+        <td><strong style="color:var(--red)">71%</strong></td>
+        <td><div class="inline-bar"><div class="inline-fill" style="width:47%;background:var(--red)"></div></div></td>
+        <td><span class="chip red">✗ Crítico</span></td>
+        <td class="trend-arrow ta-down">▼ Caindo</td>
+      </tr>
+      <tr>
+        <td><span class="persp-tag tag-proc">Processos</span></td>
+        <td>Lead Time de Entrega</td>
+        <td>5 dias</td>
+        <td><strong style="color:var(--yellow)">6,2 dias</strong></td>
+        <td><div class="inline-bar"><div class="inline-fill" style="width:58%;background:var(--yellow)"></div></div></td>
+        <td><span class="chip yellow">⚠ Abaixo</span></td>
+        <td class="trend-arrow ta-down">▼ Caindo</td>
+      </tr>
+      <tr>
+        <td><span class="persp-tag tag-proc">Processos</span></td>
+        <td>Taxa de Retrabalho</td>
+        <td>&lt;5%</td>
+        <td><strong>4,2%</strong></td>
+        <td><div class="inline-bar"><div class="inline-fill" style="width:82%;background:var(--fin)"></div></div></td>
+        <td><span class="chip green">✓ No target</span></td>
+        <td class="trend-arrow ta-up">▲ Subindo</td>
+      </tr>
+      <tr>
+        <td><span class="persp-tag tag-apr">Aprendizado</span></td>
+        <td>Engajamento do Time</td>
+        <td>80%</td>
+        <td><strong>83%</strong></td>
+        <td><div class="inline-bar"><div class="inline-fill" style="width:83%;background:var(--apr)"></div></div></td>
+        <td><span class="chip green">✓ Superou</span></td>
+        <td class="trend-arrow ta-up">▲ Subindo</td>
+      </tr>
+      <tr>
+        <td><span class="persp-tag tag-apr">Aprendizado</span></td>
+        <td>Turnover</td>
+        <td>&lt;10%</td>
+        <td><strong>7%</strong></td>
+        <td><div class="inline-bar"><div class="inline-fill" style="width:80%;background:var(--fin)"></div></div></td>
+        <td><span class="chip green">✓ Superou</span></td>
+        <td class="trend-arrow ta-up">▲ Subindo</td>
+      </tr>
+      <tr>
+        <td><span class="persp-tag tag-apr">Aprendizado</span></td>
+        <td>Horas de Treinamento</td>
+        <td>40h/mês</td>
+        <td><strong>38h/mês</strong></td>
+        <td><div class="inline-bar"><div class="inline-fill" style="width:76%;background:var(--yellow)"></div></div></td>
+        <td><span class="chip yellow">⚠ Próximo</span></td>
+        <td class="trend-arrow ta-up">▲ Subindo</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ── BOTTOM GRID ──────────────────────────────────────────── -->
+<div class="bottom-grid">
+
+  <!-- Evolução Trimestral -->
+  <div class="trend-card">
+    <div class="card-title">📈 Evolução Trimestral — Score Global</div>
+    <svg width="100%" height="130" viewBox="0 0 400 130">
+      <!-- Grid lines -->
+      <line x1="45" y1="10" x2="45" y2="100" stroke="var(--border)" stroke-width="1"/>
+      <line x1="45" y1="100" x2="390" y2="100" stroke="var(--border)" stroke-width="1"/>
+      <line x1="45" y1="62" x2="390" y2="62" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="4,4"/>
+      <line x1="45" y1="38" x2="390" y2="38" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="4,4"/>
+      <!-- Y labels -->
+      <text x="38" y="104" fill="var(--muted)" font-size="9" text-anchor="end">0</text>
+      <text x="38" y="65"  fill="var(--muted)" font-size="9" text-anchor="end">50%</text>
+      <text x="38" y="41"  fill="var(--muted)" font-size="9" text-anchor="end">75%</text>
+      <!-- X labels -->
+      <text x="115" y="118" fill="var(--muted)" font-size="9" text-anchor="middle">Q3 2025</text>
+      <text x="195" y="118" fill="var(--muted)" font-size="9" text-anchor="middle">Q4 2025</text>
+      <text x="275" y="118" fill="var(--muted)" font-size="9" text-anchor="middle">Q1 2026</text>
+      <text x="355" y="118" fill="var(--muted)" font-size="9" text-anchor="middle">Q2 2026</text>
+      <!-- Area gradient -->
+      <defs>
+        <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#4f46e5" stop-opacity=".18"/>
+          <stop offset="100%" stop-color="#4f46e5" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <!-- Q3'25=50%, Q4'25=50%, Q1'26=63%, Q2'26=67% -->
+      <!-- y = 100 - (val/100)*90 => 50%->55, 63%->43, 67%->40 -->
+      <polygon points="115,62 195,62 275,43 355,40 355,100 115,100" fill="url(#areaGrad)"/>
+      <polyline points="115,62 195,62 275,43 355,40"
+        fill="none" stroke="#4f46e5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="115" cy="62" r="4" fill="#4f46e5" stroke="var(--surface)" stroke-width="2"/>
+      <circle cx="195" cy="62" r="4" fill="#4f46e5" stroke="var(--surface)" stroke-width="2"/>
+      <circle cx="275" cy="43" r="4" fill="#4f46e5" stroke="var(--surface)" stroke-width="2"/>
+      <circle cx="355" cy="40" r="5" fill="#4f46e5" stroke="var(--surface)" stroke-width="2.5"/>
+      <!-- Value labels -->
+      <text x="115" y="54" fill="#4f46e5" font-size="9" text-anchor="middle">50%</text>
+      <text x="195" y="54" fill="#4f46e5" font-size="9" text-anchor="middle">50%</text>
+      <text x="275" y="35" fill="#4f46e5" font-size="9" text-anchor="middle">63%</text>
+      <text x="355" y="32" fill="#4f46e5" font-size="9" text-anchor="middle" font-weight="700">67%</text>
+    </svg>
+  </div>
+
+  <!-- Distribuição de Status -->
+  <div class="dist-card">
+    <div class="card-title">🎯 Distribuição de Status dos KPIs</div>
+    <div style="display:flex;align-items:center;gap:16px;margin-top:10px;">
+      <svg width="110" height="110" viewBox="0 0 110 110" style="flex-shrink:0">
+        <!-- 9 KPIs: 5 green (200deg), 3 orange (120deg), 1 red (40deg) -->
+        <!-- circumference r=40: 251.33 -->
+        <!-- green 5/9=55.5% -> 139.5 of 251.33, offset=0 -->
+        <!-- orange 3/9=33.3% -> 83.8, offset=-139.5 -->
+        <!-- red 1/9=11.1% -> 27.9, offset=-223.3 -->
+        <circle cx="55" cy="55" r="40" fill="none" stroke="#e8ecf5" stroke-width="14"/>
+        <circle cx="55" cy="55" r="40" fill="none" stroke="var(--green)" stroke-width="14"
+          stroke-dasharray="139.5 111.83" stroke-dashoffset="0"
+          transform="rotate(-90 55 55)"/>
+        <circle cx="55" cy="55" r="40" fill="none" stroke="var(--yellow)" stroke-width="14"
+          stroke-dasharray="83.8 167.53" stroke-dashoffset="-139.5"
+          transform="rotate(-90 55 55)"/>
+        <circle cx="55" cy="55" r="40" fill="none" stroke="var(--red)" stroke-width="14"
+          stroke-dasharray="27.9 223.43" stroke-dashoffset="-223.3"
+          transform="rotate(-90 55 55)"/>
+        <text x="55" y="51" text-anchor="middle" fill="var(--text)" font-size="18" font-weight="900">9</text>
+        <text x="55" y="64" text-anchor="middle" fill="var(--muted)" font-size="9">KPIs</text>
+      </svg>
+      <div class="dist-legend">
+        <div class="dist-item">
+          <span class="dist-dot" style="background:var(--green)"></span>
+          <span class="dist-label">No target / acima</span>
+          <span class="dist-val">5</span>
+        </div>
+        <div class="dist-item">
+          <span class="dist-dot" style="background:var(--yellow)"></span>
+          <span class="dist-label">Atenção / abaixo</span>
+          <span class="dist-val">3</span>
+        </div>
+        <div class="dist-item">
+          <span class="dist-dot" style="background:var(--red)"></span>
+          <span class="dist-label">Crítico</span>
+          <span class="dist-val">1</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Footer -->
+<div class="footer">
+  Rio International School &nbsp;·&nbsp; Mapa Estratégico RIS &nbsp;·&nbsp; Q2 2026 &nbsp;·&nbsp; Dados ilustrativos — substitua pelos dados reais
+</div>
+
+</body>
+</html>
